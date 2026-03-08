@@ -9,6 +9,7 @@ Group:		Servers
 BuildArch:	noarch
 Requires:	php
 Requires:	php-gromox
+BuildRequires:	make
 
 %description
 mapi-headers-php is the central repository for PHP-based MAPI applications.
