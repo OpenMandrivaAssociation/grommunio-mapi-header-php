@@ -1,7 +1,7 @@
 Name:		grommunio-mapi-header-php
-Version:	2.2
+Version:	2.4
 Release:	1
-Source0:	https://github.com/grommunio/mapi-header-php/releases/download/%{version}/mapi-header-php-%{version}.tar.zst
+Source0:	https://github.com/grommunio/mapi-header-php/archive/refs/tags/%{version}.tar.gz#/mapi-header-php-%{version}.tar.gz
 Summary:	grommunio MAPI headers (PHP)
 URL:		https://github.com/grommunio/mapi-header-php
 License:	AGPL-3.0
