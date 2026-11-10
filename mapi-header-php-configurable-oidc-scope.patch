@@ -1,0 +1,56 @@
+Subject: [PATCH] KeyCloak: make the requested OAuth2 scope configurable
+
+The client hardcodes scope=openid. Providers that gate claims and refresh
+tokens by scope (authentik, Zitadel, Authelia) then return an id_token
+without `email` and no refresh_token, and the login loops. An optional
+"scope" key in keycloak.json (RFC 6749 scope-token syntax, must contain
+"openid") overrides the default; behaviour is unchanged without it.
+
+diff --git a/class.keycloak.php b/class.keycloak.php
+index bb6a6d2..5448c3f 100644
+--- a/class.keycloak.php
++++ b/class.keycloak.php
+@@ -30,6 +30,13 @@ class KeyCloak {
+ 
+ 	protected $public_key;
+ 	protected $is_public;
++	/**
++	 * OAuth2 scopes requested at login and on token requests. "openid" alone
++	 * yields an id_token without the `email` claim and no refresh_token on
++	 * providers that gate them by scope (authentik, Zitadel, Authelia ...).
++	 * Configurable via the optional "scope" key in keycloak.json.
++	 */
++	protected $scope = 'openid';
+ 
+ 	/**
+ 	 * The constructor reads all required values from the KeyCloak configuration file.
+@@ -69,6 +76,11 @@ class KeyCloak {
+ 
+ 		// Root realm URL.
+ 		$this->realm_url = $auth_server_url . 'realms/' . $this->realm_id;
++		if (isset($keycloak_config['scope']) && is_string($keycloak_config['scope'])
++		    && preg_match('/\A[\x21\x23-\x5B\x5D-\x7E]+( [\x21\x23-\x5B\x5D-\x7E]+)*\z/D', $keycloak_config['scope']) === 1
++		    && in_array('openid', explode(' ', $keycloak_config['scope']), true)) {
++			$this->scope = $keycloak_config['scope'];
++		}
+ 
+ 		// Root realm admin URL.
+ 		$this->realm_admin_url = $auth_server_url . 'admin/realms/' . $this->realm_id;
+@@ -181,7 +193,7 @@ class KeyCloak {
+ 		else {
+ 			$headers[] = 'Authorization: Basic ' . base64_encode($this->client_id . ':' . $this->secret);
+ 		}
+-		$params['scope'] = 'openid';
++		$params['scope'] = $this->scope;
+ 		$response = $this->http_curl_request('POST', '/protocol/openid-connect/token', $headers, http_build_query($params));
+ 		if ($response['code'] < 200 || $response['code'] > 299) {
+ 			$this->error = $response['body'];
+@@ -259,7 +271,7 @@ class KeyCloak {
+ 	public function login_url(string $redirect_url): string {
+ 		$uuid = bin2hex(openssl_random_pseudo_bytes(32));
+ 
+-		return $this->realm_url . '/protocol/openid-connect/auth?scope=openid&client_id=' . urlencode((string) $this->client_id) . '&state=' . urlencode($uuid) . '&redirect_uri=' . urlencode($redirect_url) . '&response_type=code';
++		return $this->realm_url . '/protocol/openid-connect/auth?scope=' . rawurlencode($this->scope) . '&client_id=' . urlencode((string) $this->client_id) . '&state=' . urlencode($uuid) . '&redirect_uri=' . urlencode($redirect_url) . '&response_type=code';
+ 	}
+ 
+ 	/**

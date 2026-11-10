@@ -1,7 +1,9 @@
 Name:		grommunio-mapi-header-php
 Version:	2.4
-Release:	1
+Release:	2
 Source0:	https://github.com/grommunio/mapi-header-php/archive/refs/tags/%{version}.tar.gz#/mapi-header-php-%{version}.tar.gz
+# Submit upstream together with the grommunio-web half.
+Patch0:		mapi-header-php-configurable-oidc-scope.patch
 Summary:	grommunio MAPI headers (PHP)
 URL:		https://github.com/grommunio/mapi-header-php
 License:	AGPL-3.0
